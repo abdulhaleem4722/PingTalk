@@ -3,10 +3,12 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, MessageCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../api/axios';
+import { useAuth } from '../context/AuthContext';
 
 function Login() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
+  const { login } = useAuth();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -29,6 +31,7 @@ function Login() {
     try {
       const res = await api.post('/auth/login', formData);
       toast.success(res.data.message);
+      login(res.data.user);
       navigate('/chat'); // baad mein ye page banayenge
     } catch (error) {
       const message = error.response?.data?.message || 'Something went wrong';
