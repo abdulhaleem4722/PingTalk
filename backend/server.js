@@ -17,45 +17,52 @@ const app = express();
 const server = http.createServer(app);
 
 const io = new Server(server, {
-  cors: {
-    origin: 'http://localhost:5173',
-    credentials: true,
-  },
+    cors: {
+        origin: 'http://localhost:5173',
+        credentials: true,
+    },
 });
 
 // Track online users: { userId: socketId }
 const onlineUsers = new Map();
 
 io.on('connection', (socket) => {
-  console.log('User connected:', socket.id);
+    console.log('User connected:', socket.id);
 
-  const userId = socket.handshake.query.userId;
-  if (userId) {
-    onlineUsers.set(userId, socket.id);
-    io.emit('getOnlineUsers', Array.from(onlineUsers.keys()));
+    const userId = socket.handshake.query.userId;
+    if (userId) {
+        onlineUsers.set(userId, socket.id);
+        io.emit('getOnlineUsers', Array.from(onlineUsers.keys()));
+    }
+
+
+   socket.on('markAsRead', ({ senderId, receiverId }) => {
+  const senderSocketId = onlineUsers.get(senderId);
+  if (senderSocketId) {
+    io.to(senderSocketId).emit('messagesRead', { readBy: receiverId });
   }
-
-  socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
-    onlineUsers.delete(userId);
-    io.emit('getOnlineUsers', Array.from(onlineUsers.keys()));
-  });
+});
+    socket.on('disconnect', () => {
+        console.log('User disconnected:', socket.id);
+        onlineUsers.delete(userId);
+        io.emit('getOnlineUsers', Array.from(onlineUsers.keys()));
+    });
 });
 
 // Helper to get a user's socket id (used in messageController)
 function getReceiverSocketId(receiverId) {
-  return onlineUsers.get(receiverId);
+    return onlineUsers.get(receiverId);
 }
 
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true,
+    origin: 'http://localhost:5173',
+    credentials: true,
 }));
 
 app.get('/', (req, res) => {
-  res.send('PingTalk backend is running!');
+    res.send('PingTalk backend is running!');
 });
 
 app.use('/api/auth', authRoutes);
@@ -64,7 +71,7 @@ app.use('/api/messages', messageRoutes);
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });
 
 module.exports = { io, getReceiverSocketId };
