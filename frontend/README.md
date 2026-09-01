@@ -1,16 +1,102 @@
-# React + Vite
+# 💬 PingTalk
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A real-time, full-stack chat application built with the MERN stack and Socket.io — inspired by WhatsApp's core messaging experience.
 
-Currently, two official plugins are available:
+## ✨ Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- 🔐 **Secure Authentication** — JWT-based auth with bcrypt password hashing
+- 📧 **Email OTP Verification** — Signup requires email verification via a 6-digit code (Nodemailer)
+- 💬 **Real-Time Messaging** — Instant message delivery powered by Socket.io
+- ✅ **Read Receipts** — WhatsApp-style single/double tick with real-time blue tick updates
+- ⌨️ **Typing Indicator** — Live "typing..." status
+- 🟢 **Online/Offline Status** — Real-time presence tracking
+- 🔴 **Unread Message Badges** — Unread count and last message preview in the sidebar
+- 📱 **Fully Responsive** — Mobile-first design with WhatsApp-style navigation (list → full-screen chat)
+- 🌗 **Dark Mode Support**
+- 🛡️ **Protected Routes** — Client and server-side route protection
 
-## React Compiler
+## 🛠️ Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+**Frontend:** React (Vite), Tailwind CSS v4, React Router, Axios, Socket.io Client, React Hot Toast, Lucide Icons
 
-## Expanding the Oxlint configuration
+**Backend:** Node.js, Express.js, MongoDB (Mongoose), Socket.io, JWT, Bcrypt.js, Nodemailer
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+**Database:** MongoDB Atlas
+
+## 📸 Screenshots
+
+*(Add screenshots here)*
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js installed
+- MongoDB Atlas account
+- Gmail account with an App Password (for OTP emails)
+
+### Installation
+
+1. Clone the repository
+```bash
+git clone https://github.com/abdulhaleem4722/PingTalk.git
+cd PingTalk
+```
+
+2. Setup Backend
+```bash
+cd backend
+npm install
+```
+
+Create a `.env` file in the `backend` folder:
+```
+PORT=5000
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
+EMAIL_USER=your_gmail_address
+EMAIL_PASS=your_gmail_app_password
+```
+
+```bash
+npm run dev
+```
+
+3. Setup Frontend
+```bash
+cd ../frontend
+npm install
+npm run dev
+```
+
+4. Open `http://localhost:5173` in your browser
+
+## 📁 Project Structure
+
+
+
+PingTalk/
+├── backend/
+│ ├── config/
+│ ├── controllers/
+│ ├── middleware/
+│ ├── models/
+│ ├── routes/
+│ ├── utils/
+│ └── server.js
+└── frontend/
+└── src/
+├── api/
+├── components/
+├── context/
+└── pages/
+
+
+
+## 👤 Author
+
+**Abdul Haleem**
+[GitHub](https://github.com/abdulhaleem4722)
+
+---
+
+⭐ If you like this project, consider giving it a star!
