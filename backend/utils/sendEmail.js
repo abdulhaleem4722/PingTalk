@@ -1,16 +1,10 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const sendOTPEmail = async (toEmail, otp) => {
-  const mailOptions = {
-    from: `"PingTalk" <${process.env.EMAIL_USER}>`,
+  await resend.emails.send({
+    from: 'PingTalk <onboarding@resend.dev>',
     to: toEmail,
     subject: 'PingTalk - Verify Your Email',
     html: `
@@ -22,9 +16,7 @@ const sendOTPEmail = async (toEmail, otp) => {
         <p>If you didn't request this, please ignore this email.</p>
       </div>
     `,
-  };
-
-  await transporter.sendMail(mailOptions);
+  });
 };
 
 module.exports = sendOTPEmail;
