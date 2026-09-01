@@ -7,8 +7,12 @@ function ChatHome() {
 
   return (
     <div className="h-screen flex overflow-hidden">
-      <Sidebar selectedUser={selectedUser} setSelectedUser={setSelectedUser} />
-      <ChatWindow selectedUser={selectedUser} />
+      <div className={`${selectedUser ? 'hidden sm:flex' : 'flex'} w-full sm:w-auto`}>
+        <Sidebar selectedUser={selectedUser} setSelectedUser={setSelectedUser} />
+      </div>
+      <div className={`${selectedUser ? 'flex' : 'hidden sm:flex'} flex-1`}>
+        <ChatWindow selectedUser={selectedUser} onBack={() => setSelectedUser(null)} />
+      </div>
     </div>
   );
 }

@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { Send, MessageCircle, Check, CheckCheck } from 'lucide-react';
+import { Send, MessageCircle, Check, CheckCheck, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 
-function ChatWindow({ selectedUser }) {
+function ChatWindow({ selectedUser, onBack }) {
     const { user, socket, onlineUsers } = useAuth();
     const [messages, setMessages] = useState([]);
     const [text, setText] = useState('');
@@ -13,21 +13,20 @@ function ChatWindow({ selectedUser }) {
     const [isTyping, setIsTyping] = useState(false);
     const typingTimeoutRef = useRef(null);
 
-
     useEffect(() => {
         if (!socket) return;
 
-      const handleUserTyping = ({ senderId }) => {
-    if (senderId?.toString() === selectedUser?._id?.toString()) {
-        setIsTyping(true);
-    }
-};
+        const handleUserTyping = ({ senderId }) => {
+            if (senderId?.toString() === selectedUser?._id?.toString()) {
+                setIsTyping(true);
+            }
+        };
 
-const handleUserStoppedTyping = ({ senderId }) => {
-    if (senderId?.toString() === selectedUser?._id?.toString()) {
-        setIsTyping(false);
-    }
-};
+        const handleUserStoppedTyping = ({ senderId }) => {
+            if (senderId?.toString() === selectedUser?._id?.toString()) {
+                setIsTyping(false);
+            }
+        };
 
         socket.on('userTyping', handleUserTyping);
         socket.on('userStoppedTyping', handleUserStoppedTyping);
@@ -50,7 +49,6 @@ const handleUserStoppedTyping = ({ senderId }) => {
                 const res = await api.get(`/messages/${selectedUser._id}`);
                 setMessages(res.data.messages);
 
-                // Mark unread messages from this user as read
                 await api.put(`/messages/read/${selectedUser._id}`);
                 if (socket) {
                     socket.emit('markAsRead', { senderId: selectedUser._id, receiverId: myId });
@@ -74,7 +72,6 @@ const handleUserStoppedTyping = ({ senderId }) => {
             ) {
                 setMessages((prev) => [...prev, newMessage]);
 
-                // If this chat is open, immediately mark as read
                 if (newMessage.senderId === selectedUser?._id) {
                     api.put(`/messages/read/${selectedUser._id}`);
                     socket.emit('markAsRead', { senderId: selectedUser._id, receiverId: myId });
@@ -104,8 +101,6 @@ const handleUserStoppedTyping = ({ senderId }) => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-
-
     const handleTyping = (e) => {
         setText(e.target.value);
 
@@ -119,6 +114,7 @@ const handleUserStoppedTyping = ({ senderId }) => {
             socket.emit('stopTyping', { receiverId: selectedUser._id, senderId: myId });
         }, 1500);
     };
+
     const handleSend = async (e) => {
         e.preventDefault();
         if (!text.trim()) return;
@@ -135,7 +131,7 @@ const handleUserStoppedTyping = ({ senderId }) => {
 
     if (!selectedUser) {
         return (
-            <div className="hidden sm:flex flex-1 items-center justify-center bg-bg-light dark:bg-bg-dark">
+            <div className="flex flex-1 items-center justify-center bg-bg-light dark:bg-bg-dark">
                 <div className="text-center">
                     <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
                         <MessageCircle className="text-primary" size={32} />
@@ -152,6 +148,9 @@ const handleUserStoppedTyping = ({ senderId }) => {
         <div className="flex-1 flex flex-col h-full bg-bg-light dark:bg-bg-dark">
             {/* Header */}
             <div className="p-4 flex items-center gap-3 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+                <button onClick={onBack} className="sm:hidden text-gray-500 dark:text-gray-400">
+                    <ArrowLeft size={20} />
+                </button>
                 <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold">
                     {selectedUser.name.charAt(0).toUpperCase()}
                 </div>
