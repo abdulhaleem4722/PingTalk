@@ -17,10 +17,10 @@ const app = express();
 const server = http.createServer(app);
 
 const io = new Server(server, {
-    cors: {
-        origin: 'http://localhost:5173',
-        credentials: true,
-    },
+  cors: {
+    origin: 'https://ping-talk-rho.vercel.app',
+    credentials: true,
+  },
 });
 
 // Track online users: { userId: socketId }
@@ -71,8 +71,8 @@ function getReceiverSocketId(receiverId) {
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-    origin: 'http://localhost:5173',
-    credentials: true,
+  origin: 'https://ping-talk-rho.vercel.app',
+  credentials: true,
 }));
 
 app.get('/', (req, res) => {
