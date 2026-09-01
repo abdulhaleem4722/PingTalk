@@ -101,11 +101,13 @@ exports.resendOTP = async (req, res) => {
         user.otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
         await user.save();
 
+        console.log('DEBUG: about to send OTP email to', email);
         await sendOTPEmail(email, otp);
+        console.log('DEBUG: OTP email sent successfully');
 
         res.status(200).json({ message: 'New OTP sent to your email' });
     } catch (error) {
-        console.error(error);
+        console.error('DEBUG ERROR sending OTP:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };

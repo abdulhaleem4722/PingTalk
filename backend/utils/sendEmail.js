@@ -3,7 +3,7 @@ const { Resend } = require('resend');
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const sendOTPEmail = async (toEmail, otp) => {
-  await resend.emails.send({
+  const { data, error } = await resend.emails.send({
     from: 'PingTalk <onboarding@resend.dev>',
     to: toEmail,
     subject: 'PingTalk - Verify Your Email',
@@ -17,6 +17,13 @@ const sendOTPEmail = async (toEmail, otp) => {
       </div>
     `,
   });
+
+  if (error) {
+    console.error('DEBUG: Resend returned an error:', error);
+    throw new Error(error.message || 'Failed to send email via Resend');
+  }
+
+  console.log('DEBUG: Resend accepted the email, id:', data.id);
 };
 
 module.exports = sendOTPEmail;
