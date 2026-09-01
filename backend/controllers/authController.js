@@ -34,7 +34,9 @@ exports.signup = async (req, res) => {
         });
 
         await newUser.save();
+        console.log('DEBUG: about to send OTP email to', email);
         await sendOTPEmail(email, otp);
+        console.log('DEBUG: OTP email sent successfully');
 
         res.status(201).json({
             message: 'Signup successful. Please check your email for the verification code.',
