@@ -13,7 +13,7 @@ export function AuthProvider({ children }) {
   const connectSocket = (userId) => {
     if (socketRef.current) return;
 
-    const socket = io('http://localhost:5000', {
+    const socket = io('https://pingtalk-production.up.railway.app', {
       query: { userId },
     });
 
