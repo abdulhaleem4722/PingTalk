@@ -35,13 +35,27 @@ io.on('connection', (socket) => {
         io.emit('getOnlineUsers', Array.from(onlineUsers.keys()));
     }
 
+    socket.on('markAsRead', ({ senderId, receiverId }) => {
+        const senderSocketId = onlineUsers.get(senderId);
+        if (senderSocketId) {
+            io.to(senderSocketId).emit('messagesRead', { readBy: receiverId });
+        }
+    });
 
-   socket.on('markAsRead', ({ senderId, receiverId }) => {
-  const senderSocketId = onlineUsers.get(senderId);
-  if (senderSocketId) {
-    io.to(senderSocketId).emit('messagesRead', { readBy: receiverId });
-  }
-});
+    socket.on('typing', ({ receiverId, senderId }) => {
+        const receiverSocketId = onlineUsers.get(receiverId);
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit('userTyping', { senderId });
+        }
+    });
+
+    socket.on('stopTyping', ({ receiverId, senderId }) => {
+        const receiverSocketId = onlineUsers.get(receiverId);
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit('userStoppedTyping', { senderId });
+        }
+    });
+
     socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id);
         onlineUsers.delete(userId);
