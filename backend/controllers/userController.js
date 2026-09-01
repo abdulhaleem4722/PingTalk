@@ -1,6 +1,7 @@
 const User = require('../models/User');
+const Message = require('../models/Message');
 
-// @desc Get all users except the logged-in user (for sidebar list)
+// @desc Get all users except the logged-in user, with last message + unread count
 exports.getUsersForSidebar = async (req, res) => {
   try {
     const loggedInUserId = req.userId;
@@ -9,7 +10,40 @@ exports.getUsersForSidebar = async (req, res) => {
       '-password -otpCode -otpExpiry'
     );
 
-    res.status(200).json({ users });
+    // For each user, find the last message and unread count
+    const usersWithChatInfo = await Promise.all(
+      users.map(async (u) => {
+        const lastMessage = await Message.findOne({
+          $or: [
+            { senderId: loggedInUserId, receiverId: u._id },
+            { senderId: u._id, receiverId: loggedInUserId },
+          ],
+        }).sort({ createdAt: -1 });
+
+        const unreadCount = await Message.countDocuments({
+          senderId: u._id,
+          receiverId: loggedInUserId,
+          status: { $ne: 'read' },
+        });
+
+        return {
+          ...u.toObject(),
+          lastMessage: lastMessage
+            ? { text: lastMessage.text, createdAt: lastMessage.createdAt }
+            : null,
+          unreadCount,
+        };
+      })
+    );
+
+    // Sort: users with most recent messages first
+    usersWithChatInfo.sort((a, b) => {
+      const timeA = a.lastMessage ? new Date(a.lastMessage.createdAt) : 0;
+      const timeB = b.lastMessage ? new Date(b.lastMessage.createdAt) : 0;
+      return timeB - timeA;
+    });
+
+    res.status(200).json({ users: usersWithChatInfo });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error', error: error.message });

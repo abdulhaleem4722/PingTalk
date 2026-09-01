@@ -4,24 +4,73 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 
 function Sidebar({ selectedUser, setSelectedUser }) {
-  const { user, logout, onlineUsers } = useAuth();
+  const { user, logout, onlineUsers, socket } = useAuth();
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
 
+  const fetchUsers = async () => {
+    try {
+      const res = await api.get('/users');
+      setUsers(res.data.users);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const res = await api.get('/users');
-        setUsers(res.data.users);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchUsers();
   }, []);
+
+  // Listen for new messages to update sidebar (last message, unread count, reorder)
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNewMessage = (newMessage) => {
+      setUsers((prevUsers) => {
+        const senderId = newMessage.senderId?.toString();
+        const receiverId = newMessage.receiverId?.toString();
+        const otherUserId = senderId === (user._id || user.id)?.toString() ? receiverId : senderId;
+
+        const isCurrentlyOpen = selectedUser?._id?.toString() === otherUserId;
+
+        const updated = prevUsers.map((u) => {
+          if (u._id.toString() === otherUserId) {
+            return {
+              ...u,
+              lastMessage: { text: newMessage.text, createdAt: newMessage.createdAt },
+              unreadCount: isCurrentlyOpen ? 0 : (u.unreadCount || 0) + (senderId === otherUserId ? 1 : 0),
+            };
+          }
+          return u;
+        });
+
+        // Move the updated user to top
+        const sorted = [...updated].sort((a, b) => {
+          const timeA = a.lastMessage ? new Date(a.lastMessage.createdAt) : 0;
+          const timeB = b.lastMessage ? new Date(b.lastMessage.createdAt) : 0;
+          return timeB - timeA;
+        });
+
+        return sorted;
+      });
+    };
+
+    socket.on('newMessage', handleNewMessage);
+    return () => socket.off('newMessage', handleNewMessage);
+  }, [socket, selectedUser, user]);
+
+  // When a chat is opened, reset its unread count locally
+  useEffect(() => {
+    if (!selectedUser) return;
+    setUsers((prevUsers) =>
+      prevUsers.map((u) =>
+        u._id.toString() === selectedUser._id.toString() ? { ...u, unreadCount: 0 } : u
+      )
+    );
+  }, [selectedUser]);
 
   const filteredUsers = users.filter((u) =>
     u.name.toLowerCase().includes(search.toLowerCase())
@@ -72,6 +121,7 @@ function Sidebar({ selectedUser, setSelectedUser }) {
           filteredUsers.map((u) => {
             const isOnline = onlineUsers.includes(u._id);
             const isSelected = selectedUser?._id === u._id;
+            const hasUnread = u.unreadCount > 0;
             return (
               <button
                 key={u._id}
@@ -89,11 +139,18 @@ function Sidebar({ selectedUser, setSelectedUser }) {
                   )}
                 </div>
                 <div className="flex-1 text-left min-w-0">
-                  <p className="font-medium text-gray-900 dark:text-white truncate">{u.name}</p>
-                  <p className="text-xs text-gray-400 truncate">
-                    {isOnline ? 'Online' : 'Offline'}
+                  <p className={`font-medium truncate ${hasUnread ? 'text-gray-900 dark:text-white' : 'text-gray-900 dark:text-white'}`}>
+                    {u.name}
+                  </p>
+                  <p className={`text-xs truncate ${hasUnread ? 'text-gray-700 dark:text-gray-300 font-medium' : 'text-gray-400'}`}>
+                    {u.lastMessage ? u.lastMessage.text : isOnline ? 'Online' : 'Offline'}
                   </p>
                 </div>
+                {hasUnread && (
+                  <span className="flex-shrink-0 min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-white text-xs font-semibold flex items-center justify-center">
+                    {u.unreadCount}
+                  </span>
+                )}
               </button>
             );
           })
