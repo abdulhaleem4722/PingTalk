@@ -188,8 +188,12 @@ function ChatWindow({ selectedUser, onBack }) {
                 <button onClick={onBack} className="sm:hidden text-gray-500 dark:text-gray-400">
                     <ArrowLeft size={20} />
                 </button>
-                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold">
-                    {selectedUser.name.charAt(0).toUpperCase()}
+                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold overflow-hidden">
+                    {selectedUser.profilePic ? (
+                        <img src={selectedUser.profilePic} alt={selectedUser.name} className="w-full h-full object-cover" />
+                    ) : (
+                        selectedUser.name.charAt(0).toUpperCase()
+                    )}
                 </div>
                 <div>
                     <p className="font-medium text-gray-900 dark:text-white">{selectedUser.name}</p>

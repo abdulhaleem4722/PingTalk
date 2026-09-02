@@ -49,3 +49,26 @@ exports.getUsersForSidebar = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
+// @desc Update own profile picture
+exports.updateProfilePic = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { profilePic } = req.body;
+
+    if (!profilePic) {
+      return res.status(400).json({ message: 'Profile picture URL is required' });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { profilePic },
+      { new: true }
+    ).select('-password -otpCode -otpExpiry');
+
+    res.status(200).json({ user: updatedUser });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};

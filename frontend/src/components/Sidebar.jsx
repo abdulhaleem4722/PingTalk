@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { MessageCircle, Search, LogOut } from 'lucide-react';
+import { MessageCircle, Search, LogOut, User } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 
 function Sidebar({ selectedUser, setSelectedUser }) {
   const { user, logout, onlineUsers, socket } = useAuth();
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -24,7 +26,6 @@ function Sidebar({ selectedUser, setSelectedUser }) {
     fetchUsers();
   }, []);
 
-  // Listen for new messages to update sidebar (last message, unread count, reorder)
   useEffect(() => {
     if (!socket) return;
 
@@ -47,7 +48,6 @@ function Sidebar({ selectedUser, setSelectedUser }) {
           return u;
         });
 
-        // Move the updated user to top
         const sorted = [...updated].sort((a, b) => {
           const timeA = a.lastMessage ? new Date(a.lastMessage.createdAt) : 0;
           const timeB = b.lastMessage ? new Date(b.lastMessage.createdAt) : 0;
@@ -62,7 +62,6 @@ function Sidebar({ selectedUser, setSelectedUser }) {
     return () => socket.off('newMessage', handleNewMessage);
   }, [socket, selectedUser, user]);
 
-  // When a chat is opened, reset its unread count locally
   useEffect(() => {
     if (!selectedUser) return;
     setUsers((prevUsers) =>
@@ -86,13 +85,26 @@ function Sidebar({ selectedUser, setSelectedUser }) {
           </div>
           <span className="font-bold text-gray-900 dark:text-white">PingTalk</span>
         </div>
-        <button
-          onClick={logout}
-          className="text-gray-400 hover:text-red-500 transition-colors"
-          title="Logout"
-        >
-          <LogOut size={20} />
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate('/profile')}
+            className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden hover:ring-2 hover:ring-primary transition-all"
+            title="Profile"
+          >
+            {user?.profilePic ? (
+              <img src={user.profilePic} alt="me" className="w-full h-full object-cover" />
+            ) : (
+              <User size={16} className="text-primary" />
+            )}
+          </button>
+          <button
+            onClick={logout}
+            className="text-gray-400 hover:text-red-500 transition-colors"
+            title="Logout"
+          >
+            <LogOut size={20} />
+          </button>
+        </div>
       </div>
 
       {/* Search */}
@@ -131,8 +143,12 @@ function Sidebar({ selectedUser, setSelectedUser }) {
                 }`}
               >
                 <div className="relative">
-                  <div className="w-11 h-11 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold">
-                    {u.name.charAt(0).toUpperCase()}
+                  <div className="w-11 h-11 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold overflow-hidden">
+                    {u.profilePic ? (
+                      <img src={u.profilePic} alt={u.name} className="w-full h-full object-cover" />
+                    ) : (
+                      u.name.charAt(0).toUpperCase()
+                    )}
                   </div>
                   {isOnline && (
                     <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-900 rounded-full"></span>

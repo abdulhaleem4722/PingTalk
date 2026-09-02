@@ -3,6 +3,7 @@ import Signup from './pages/Signup';
 import VerifyOTP from './pages/VerifyOTP';
 import Login from './pages/Login';
 import ChatHome from './pages/ChatHome';
+import Profile from './pages/Profile';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -16,6 +17,14 @@ function App() {
         element={
           <ProtectedRoute>
             <ChatHome />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <Profile />
           </ProtectedRoute>
         }
       />
