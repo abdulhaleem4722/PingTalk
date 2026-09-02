@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Send, MessageCircle, Check, CheckCheck, ArrowLeft } from 'lucide-react';
+import { Send, MessageCircle, Check, CheckCheck, ArrowLeft, Image, X } from 'lucide-react';
+import { uploadImageToCloudinary } from '../api/cloudinary';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 
@@ -12,6 +13,10 @@ function ChatWindow({ selectedUser, onBack }) {
     const myId = user._id || user.id;
     const [isTyping, setIsTyping] = useState(false);
     const typingTimeoutRef = useRef(null);
+    const [selectedImage, setSelectedImage] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
+    const [uploading, setUploading] = useState(false);
+    const fileInputRef = useRef(null);
 
     useEffect(() => {
         if (!socket) return;
@@ -115,17 +120,49 @@ function ChatWindow({ selectedUser, onBack }) {
         }, 1500);
     };
 
+    const handleImageSelect = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            alert('Please select an image file');
+            return;
+        }
+
+        setSelectedImage(file);
+        setImagePreview(URL.createObjectURL(file));
+    };
+
+    const removeSelectedImage = () => {
+        setSelectedImage(null);
+        setImagePreview(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
     const handleSend = async (e) => {
         e.preventDefault();
-        if (!text.trim()) return;
+        if (!text.trim() && !selectedImage) return;
 
         try {
-            const res = await api.post(`/messages/${selectedUser._id}`, { text });
+            let imageUrl = '';
+
+            if (selectedImage) {
+                setUploading(true);
+                imageUrl = await uploadImageToCloudinary(selectedImage);
+                setUploading(false);
+            }
+
+            const res = await api.post(`/messages/${selectedUser._id}`, {
+                text: text.trim(),
+                image: imageUrl,
+            });
             setMessages((prev) => [...prev, res.data.message]);
             setText('');
+            removeSelectedImage();
             socket.emit('stopTyping', { receiverId: selectedUser._id, senderId: myId });
         } catch (error) {
             console.error(error);
+            setUploading(false);
         }
     };
 
@@ -179,21 +216,34 @@ function ChatWindow({ selectedUser, onBack }) {
                         const isMe = msg.senderId?.toString() === myId?.toString();
                         return (
                             <div key={msg._id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+
                                 <div
-                                    className={`max-w-[75%] px-4 py-2 rounded-2xl text-sm flex items-end gap-1.5 ${isMe
+                                    className={`max-w-[75%] rounded-2xl text-sm overflow-hidden ${isMe
                                         ? 'bg-primary text-white rounded-br-sm'
                                         : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-bl-sm shadow-sm'
                                         }`}
                                 >
-                                    <span>{msg.text}</span>
-                                    {isMe && (
-                                        <span className="flex-shrink-0 mb-0.5">
-                                            {msg.status === 'read' ? (
-                                                <CheckCheck size={15} className="text-sky-300" />
-                                            ) : (
-                                                <Check size={15} className="text-white/70" />
+                                    {msg.image && (
+                                        <img
+                                            src={msg.image}
+                                            alt="shared"
+                                            className="w-full max-w-[280px] max-h-[280px] object-cover cursor-pointer"
+                                            onClick={() => window.open(msg.image, '_blank')}
+                                        />
+                                    )}
+                                    {(msg.text || isMe) && (
+                                        <div className="px-4 py-2 flex items-end gap-1.5">
+                                            {msg.text && <span>{msg.text}</span>}
+                                            {isMe && (
+                                                <span className="flex-shrink-0 mb-0.5 ml-auto">
+                                                    {msg.status === 'read' ? (
+                                                        <CheckCheck size={15} className="text-sky-300" />
+                                                    ) : (
+                                                        <Check size={15} className="text-white/70" />
+                                                    )}
+                                                </span>
                                             )}
-                                        </span>
+                                        </div>
                                     )}
                                 </div>
                             </div>
@@ -204,21 +254,55 @@ function ChatWindow({ selectedUser, onBack }) {
             </div>
 
             {/* Input */}
-            <form onSubmit={handleSend} className="p-3 flex items-center gap-2 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
-                <input
-                    type="text"
-                    value={text}
-                    onChange={handleTyping}
-                    placeholder="Type a message..."
-                    className="flex-1 px-4 py-2.5 rounded-full bg-gray-100 dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-                <button
-                    type="submit"
-                    className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary-dark transition-colors flex-shrink-0"
-                >
-                    <Send size={18} />
-                </button>
-            </form>
+            <div className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
+                {imagePreview && (
+                    <div className="px-3 pt-3">
+                        <div className="relative inline-block">
+                            <img src={imagePreview} alt="preview" className="h-20 w-20 object-cover rounded-lg" />
+                            <button
+                                onClick={removeSelectedImage}
+                                className="absolute -top-2 -right-2 w-5 h-5 bg-gray-800 text-white rounded-full flex items-center justify-center"
+                            >
+                                <X size={12} />
+                            </button>
+                        </div>
+                    </div>
+                )}
+                <form onSubmit={handleSend} className="p-3 flex items-center gap-2">
+                    <input
+                        type="file"
+                        accept="image/*"
+                        ref={fileInputRef}
+                        onChange={handleImageSelect}
+                        className="hidden"
+                    />
+                    <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-10 h-10 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-center flex-shrink-0 transition-colors"
+                    >
+                        <Image size={20} />
+                    </button>
+                    <input
+                        type="text"
+                        value={text}
+                        onChange={handleTyping}
+                        placeholder="Type a message..."
+                        className="flex-1 px-4 py-2.5 rounded-full bg-gray-100 dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                    <button
+                        type="submit"
+                        disabled={uploading}
+                        className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary-dark transition-colors flex-shrink-0 disabled:opacity-60"
+                    >
+                        {uploading ? (
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                            <Send size={18} />
+                        )}
+                    </button>
+                </form>
+            </div>
         </div>
     );
 }
