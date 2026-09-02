@@ -4,7 +4,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 const sendOTPEmail = async (toEmail, otp) => {
   const { data, error } = await resend.emails.send({
-    from: 'PingTalk <onboarding@resend.dev>',
+    from: 'PingTalk <noreply@pingtalk.shisham.dev>',
     to: toEmail,
     subject: 'PingTalk - Verify Your Email',
     html: `
