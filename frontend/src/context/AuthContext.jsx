@@ -32,11 +32,21 @@ export function AuthProvider({ children }) {
   };
 
   const checkAuth = async () => {
+    const token = localStorage.getItem('pingtalk_token');
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await api.get('/auth/me');
       setUser(res.data.user);
+      if (res.data.token) {
+        localStorage.setItem('pingtalk_token', res.data.token);
+      }
       connectSocket(res.data.user._id || res.data.user.id);
     } catch (error) {
+      localStorage.removeItem('pingtalk_token');
       setUser(null);
     } finally {
       setLoading(false);
@@ -48,9 +58,12 @@ export function AuthProvider({ children }) {
     return () => disconnectSocket();
   }, []);
 
-  const login = (userData) => {
+  const login = (userData, token) => {
+    if (token) {
+      localStorage.setItem('pingtalk_token', token);
+    }
     setUser(userData);
-    connectSocket(userData.id);
+    connectSocket(userData._id || userData.id);
   };
 
   const logout = async () => {
@@ -59,6 +72,7 @@ export function AuthProvider({ children }) {
     } catch (error) {
       console.error(error);
     } finally {
+      localStorage.removeItem('pingtalk_token');
       setUser(null);
       disconnectSocket();
     }

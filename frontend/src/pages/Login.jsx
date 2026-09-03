@@ -31,8 +31,8 @@ function Login() {
     try {
       const res = await api.post('/auth/login', formData);
       toast.success(res.data.message);
-      login(res.data.user);
-      navigate('/chat'); // baad mein ye page banayenge
+      login(res.data.user, res.data.token);
+      navigate('/chat');// baad mein ye page banayenge
     } catch (error) {
       const message = error.response?.data?.message || 'Something went wrong';
       if (message === 'Please verify your email first') {
