@@ -25,9 +25,9 @@ function Sidebar({ selectedUser, setSelectedUser }) {
     }
   };
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+ useEffect(() => {
+  fetchUsers();
+}, [selectedUser]);
 
   useEffect(() => {
     if (!socket) return;
