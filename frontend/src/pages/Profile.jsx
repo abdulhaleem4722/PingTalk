@@ -38,9 +38,12 @@ function Profile() {
   return (
     <div className="min-h-screen bg-bg-light dark:bg-bg-dark">
       <div className="p-4 flex items-center gap-3 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
-        <button onClick={() => navigate('/chat')} className="text-gray-500 dark:text-gray-400">
-          <ArrowLeft size={20} />
-        </button>
+        <button
+    onClick={() => navigate('/chat')}
+    className="w-9 h-9 rounded-full flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700 transition-colors"
+>
+    <ArrowLeft size={20} />
+</button>
         <h1 className="font-semibold text-gray-900 dark:text-white">Profile</h1>
       </div>
 

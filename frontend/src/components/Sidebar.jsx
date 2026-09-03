@@ -25,9 +25,9 @@ function Sidebar({ selectedUser, setSelectedUser }) {
     }
   };
 
- useEffect(() => {
-  fetchUsers();
-}, [selectedUser]);
+  useEffect(() => {
+    fetchUsers();
+  }, [selectedUser]);
 
   useEffect(() => {
     if (!socket) return;
@@ -137,7 +137,7 @@ function Sidebar({ selectedUser, setSelectedUser }) {
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate('/profile')}
-            className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden hover:ring-2 hover:ring-primary transition-all"
+            className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden hover:ring-2 hover:ring-primary active:scale-95 transition-all duration-200"
             title="Profile"
           >
             {user?.profilePic ? (
@@ -148,7 +148,7 @@ function Sidebar({ selectedUser, setSelectedUser }) {
           </button>
           <button
             onClick={logout}
-            className="text-gray-400 hover:text-red-500 transition-colors"
+            className="w-9 h-9 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 active:scale-95 transition-all duration-200"
             title="Logout"
           >
             <LogOut size={20} />
@@ -232,9 +232,8 @@ function Sidebar({ selectedUser, setSelectedUser }) {
                 <button
                   key={u._id}
                   onClick={() => setSelectedUser(u)}
-                  className={`w-full flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
-                    isSelected ? 'bg-primary/10 dark:bg-primary/20' : ''
-                  }`}
+                  className={`w-full flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${isSelected ? 'bg-primary/10 dark:bg-primary/20' : ''
+                    }`}
                 >
                   <div className="relative">
                     <div className="w-11 h-11 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold overflow-hidden">

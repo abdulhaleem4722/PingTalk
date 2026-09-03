@@ -185,7 +185,10 @@ function ChatWindow({ selectedUser, onBack }) {
         <div className="flex-1 flex flex-col h-full bg-bg-light dark:bg-bg-dark">
             {/* Header */}
             <div className="p-4 flex items-center gap-3 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
-                <button onClick={onBack} className="sm:hidden text-gray-500 dark:text-gray-400">
+                <button
+                    onClick={onBack}
+                    className="sm:hidden w-9 h-9 rounded-full flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700 transition-colors"
+                >
                     <ArrowLeft size={20} />
                 </button>
                 <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold overflow-hidden">
@@ -283,7 +286,7 @@ function ChatWindow({ selectedUser, onBack }) {
                     <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="w-10 h-10 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-center flex-shrink-0 transition-colors"
+                        className="w-10 h-10 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-90 flex items-center justify-center flex-shrink-0 transition-all duration-200"
                     >
                         <Image size={20} />
                     </button>
@@ -297,7 +300,7 @@ function ChatWindow({ selectedUser, onBack }) {
                     <button
                         type="submit"
                         disabled={uploading}
-                        className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary-dark transition-colors flex-shrink-0 disabled:opacity-60"
+                        className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary-dark active:scale-90 shadow-md hover:shadow-lg transition-all duration-200 flex-shrink-0 disabled:opacity-60 disabled:active:scale-100"
                     >
                         {uploading ? (
                             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
