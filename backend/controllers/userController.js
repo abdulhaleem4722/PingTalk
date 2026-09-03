@@ -43,7 +43,8 @@ exports.getUsersForSidebar = async (req, res) => {
       return timeB - timeA;
     });
 
-    res.status(200).json({ users: usersWithChatInfo });
+    const usersWithChat = usersWithChatInfo.filter((u) => u.lastMessage !== null);
+    res.status(200).json({ users: usersWithChat });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -67,6 +68,33 @@ exports.updateProfilePic = async (req, res) => {
     ).select('-password -otpCode -otpExpiry');
 
     res.status(200).json({ user: updatedUser });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc Search a user by exact email (for starting a new chat)
+exports.searchUserByEmail = async (req, res) => {
+  try {
+    const { email } = req.query;
+    const loggedInUserId = req.userId;
+
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    const foundUser = await User.findOne({
+      email: email.toLowerCase().trim(),
+      _id: { $ne: loggedInUserId },
+      isVerified: true,
+    }).select('-password -otpCode -otpExpiry');
+
+    if (!foundUser) {
+      return res.status(404).json({ message: 'No user found with this email' });
+    }
+
+    res.status(200).json({ user: foundUser });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error', error: error.message });
