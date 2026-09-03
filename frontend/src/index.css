@@ -51,3 +51,7 @@ button:disabled {
 input, textarea, select {
   font-size: 16px !important;
 }
+
+html, body {
+  touch-action: pan-x pan-y;
+}
