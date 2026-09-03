@@ -103,6 +103,10 @@ function ChatWindow({ selectedUser, onBack }) {
     }, [socket, selectedUser]);
 
     useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+    }, [selectedUser, loading]);
+
+    useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
@@ -236,6 +240,7 @@ function ChatWindow({ selectedUser, onBack }) {
                                             alt="shared"
                                             className="w-full max-w-[280px] max-h-[280px] object-cover cursor-pointer"
                                             onClick={() => window.open(msg.image, '_blank')}
+                                            onLoad={() => messagesEndRef.current?.scrollIntoView({ behavior: 'auto' })}
                                         />
                                     )}
                                     {(msg.text || isMe) && (
