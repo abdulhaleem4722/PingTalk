@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Send, MessageCircle, Check, CheckCheck, ArrowLeft, Image, X } from 'lucide-react';
+import { saveMessagesToCache, loadMessagesFromCache } from '../utils/offlineCache';
 import { uploadImageToCloudinary } from '../api/cloudinary';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
@@ -48,25 +49,33 @@ function ChatWindow({ selectedUser, onBack }) {
     useEffect(() => {
         if (!selectedUser) return;
 
-        const fetchMessages = async () => {
+        // Show cached messages immediately (works offline too)
+        const cached = loadMessagesFromCache(selectedUser._id);
+        if (cached) {
+            setMessages(cached);
+            setLoading(false);
+        } else {
             setLoading(true);
+        }
+
+        const fetchMessages = async () => {
             try {
                 const res = await api.get(`/messages/${selectedUser._id}`);
                 setMessages(res.data.messages);
+                saveMessagesToCache(selectedUser._id, res.data.messages);
 
                 await api.put(`/messages/read/${selectedUser._id}`);
                 if (socket) {
                     socket.emit('markAsRead', { senderId: selectedUser._id, receiverId: myId });
                 }
             } catch (error) {
-                console.error(error);
+                console.error('Could not fetch fresh messages (may be offline)', error);
             } finally {
                 setLoading(false);
             }
         };
         fetchMessages();
     }, [selectedUser]);
-
     useEffect(() => {
         if (!socket) return;
 
@@ -76,6 +85,7 @@ function ChatWindow({ selectedUser, onBack }) {
                 newMessage.receiverId === selectedUser?._id
             ) {
                 setMessages((prev) => [...prev, newMessage]);
+                saveMessagesToCache(selectedUser._id, [...messages, newMessage]);
 
                 if (newMessage.senderId === selectedUser?._id) {
                     api.put(`/messages/read/${selectedUser._id}`);
@@ -161,6 +171,7 @@ function ChatWindow({ selectedUser, onBack }) {
                 image: imageUrl,
             });
             setMessages((prev) => [...prev, res.data.message]);
+            saveMessagesToCache(selectedUser._id, [...messages, res.data.message]);
             setText('');
             removeSelectedImage();
             socket.emit('stopTyping', { receiverId: selectedUser._id, senderId: myId });

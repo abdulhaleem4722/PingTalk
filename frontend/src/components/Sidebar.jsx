@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { MessageCircle, Search, LogOut, User, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { saveUsersToCache, loadUsersFromCache } from '../utils/offlineCache';
 import api from '../api/axios';
 
 function Sidebar({ selectedUser, setSelectedUser }) {
@@ -14,16 +15,23 @@ function Sidebar({ selectedUser, setSelectedUser }) {
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState('');
 
-  const fetchUsers = async () => {
-    try {
-      const res = await api.get('/users');
-      setUsers(res.data.users);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
+const fetchUsers = async () => {
+    const cached = loadUsersFromCache();
+    if (cached) {
+        setUsers(cached);
+        setLoading(false);
     }
-  };
+
+    try {
+        const res = await api.get('/users');
+        setUsers(res.data.users);
+        saveUsersToCache(res.data.users);
+    } catch (error) {
+        console.error('Could not fetch fresh users (may be offline)', error);
+    } finally {
+        setLoading(false);
+    }
+};
 
   useEffect(() => {
     fetchUsers();
