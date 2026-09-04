@@ -20,7 +20,7 @@ const statusSchema = new mongoose.Schema(
       type: String,
       default: '#128C7E',
     },
-    viewedBy: [
+    viewers: [
       {
         userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
         viewedAt: { type: Date, default: Date.now },

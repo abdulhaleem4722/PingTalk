@@ -1,10 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import ChatWindow from '../components/ChatWindow';
 import BottomNav from '../components/BottomNav';
 
 function ChatHome() {
   const [selectedUser, setSelectedUser] = useState(null);
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.openUserId) {
+      setSelectedUser({ _id: location.state.openUserId, name: '...', profilePic: '' });
+    }
+  }, [location.state]);
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
