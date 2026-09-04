@@ -18,10 +18,10 @@ const app = express();
 const server = http.createServer(app);
 
 const io = new Server(server, {
-  cors: {
-    origin: 'https://ping-talk-rho.vercel.app',
-    credentials: true,
-  },
+    cors: {
+        origin: 'https://ping-talk-rho.vercel.app',
+        credentials: true,
+    },
 });
 
 // Track online users: { userId: socketId }
@@ -57,6 +57,44 @@ io.on('connection', (socket) => {
         }
     });
 
+
+    socket.on('callUser', ({ to, from, offer, callerName, callerPic }) => {
+        const receiverSocketId = onlineUsers.get(to);
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit('incomingCall', { from, offer, callerName, callerPic });
+        } else {
+            socket.emit('callFailed', { reason: 'User is offline' });
+        }
+    });
+
+    socket.on('answerCall', ({ to, answer }) => {
+        const receiverSocketId = onlineUsers.get(to);
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit('callAnswered', { answer });
+        }
+    });
+
+    socket.on('iceCandidate', ({ to, candidate }) => {
+        const receiverSocketId = onlineUsers.get(to);
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit('iceCandidate', { candidate });
+        }
+    });
+
+    socket.on('rejectCall', ({ to }) => {
+        const receiverSocketId = onlineUsers.get(to);
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit('callRejected');
+        }
+    });
+
+    socket.on('endCall', ({ to }) => {
+        const receiverSocketId = onlineUsers.get(to);
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit('callEnded');
+        }
+    });
+
     socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id);
         onlineUsers.delete(userId);
@@ -72,8 +110,8 @@ function getReceiverSocketId(receiverId) {
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-  origin: 'https://ping-talk-rho.vercel.app',
-  credentials: true,
+    origin: 'https://ping-talk-rho.vercel.app',
+    credentials: true,
 }));
 
 app.get('/', (req, res) => {

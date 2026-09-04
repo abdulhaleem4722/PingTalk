@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { Send, MessageCircle, Check, CheckCheck, ArrowLeft, Image, X } from 'lucide-react';
+import { Send, MessageCircle, Check, CheckCheck, ArrowLeft, Image, X, Phone } from 'lucide-react';
 import { saveMessagesToCache, loadMessagesFromCache } from '../utils/offlineCache';
 import { uploadImageToCloudinary } from '../api/cloudinary';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
+import { useCall } from '../context/CallContext';
 
 function ChatWindow({ selectedUser, onBack }) {
     const { user, socket, onlineUsers } = useAuth();
@@ -18,6 +19,7 @@ function ChatWindow({ selectedUser, onBack }) {
     const [imagePreview, setImagePreview] = useState(null);
     const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef(null);
+    const { startCall } = useCall();
 
     useEffect(() => {
         if (!socket) return;
@@ -200,32 +202,35 @@ function ChatWindow({ selectedUser, onBack }) {
         <div className="flex-1 flex flex-col h-full bg-bg-light dark:bg-bg-dark">
             {/* Header */}
             <div className="p-4 flex items-center gap-3 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
-                <button
-                    onClick={onBack}
-                    className="sm:hidden w-9 h-9 rounded-full flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700 transition-colors"
-                >
-                    <ArrowLeft size={20} />
-                </button>
-                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold overflow-hidden">
-                    {selectedUser.profilePic ? (
-                        <img src={selectedUser.profilePic} alt={selectedUser.name} className="w-full h-full object-cover" />
-                    ) : (
-                        selectedUser.name.charAt(0).toUpperCase()
-                    )}
-                </div>
-                <div>
-                    <p className="font-medium text-gray-900 dark:text-white">{selectedUser.name}</p>
-                    <p className="text-xs text-gray-400">
-                        {isTyping ? (
-                            <span className="text-primary">typing...</span>
-                        ) : isOnline ? (
-                            'Online'
-                        ) : (
-                            'Offline'
-                        )}
-                    </p>
-                </div>
-            </div>
+    <button onClick={onBack} className="sm:hidden w-9 h-9 rounded-full flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700 transition-colors">
+        <ArrowLeft size={20} />
+    </button>
+    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold overflow-hidden">
+        {selectedUser.profilePic ? (
+            <img src={selectedUser.profilePic} alt={selectedUser.name} className="w-full h-full object-cover" />
+        ) : (
+            selectedUser.name.charAt(0).toUpperCase()
+        )}
+    </div>
+    <div className="flex-1 min-w-0">
+        <p className="font-medium text-gray-900 dark:text-white truncate">{selectedUser.name}</p>
+        <p className="text-xs text-gray-400">
+            {isTyping ? (
+                <span className="text-primary">typing...</span>
+            ) : isOnline ? (
+                'Online'
+            ) : (
+                'Offline'
+            )}
+        </p>
+    </div>
+    <button
+        onClick={() => startCall(selectedUser)}
+        className="w-10 h-10 rounded-full flex items-center justify-center text-primary hover:bg-primary/10 active:scale-90 transition-all"
+    >
+        <Phone size={20} />
+    </button>
+</div>
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
