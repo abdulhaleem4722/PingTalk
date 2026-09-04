@@ -25,7 +25,7 @@ exports.sendMessage = async (req, res) => {
     try {
         const senderId = req.userId;
         const { receiverId } = req.params;
-        const { text, image } = req.body;
+        const { text, image, statusReply } = req.body;
 
         if (!text && !image) {
             return res.status(400).json({ message: 'Message cannot be empty' });
@@ -36,6 +36,7 @@ exports.sendMessage = async (req, res) => {
             receiverId,
             text: text || '',
             image: image || '',
+            statusReply: statusReply || undefined,
         });
 
         await newMessage.save();

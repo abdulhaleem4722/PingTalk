@@ -86,13 +86,20 @@ function StatusViewer({ group, isOwn, onClose }) {
     }
   };
 
-  const handleSendReply = async (e) => {
+const handleSendReply = async (e) => {
     e.preventDefault();
     if (!replyText.trim()) return;
 
     setSendingReply(true);
     try {
-      await api.post(`/messages/${group.user._id}`, { text: replyText.trim() });
+      await api.post(`/messages/${group.user._id}`, {
+        text: replyText.trim(),
+        statusReply: {
+          type: current.type,
+          content: current.content,
+          backgroundColor: current.backgroundColor,
+        },
+      });
       toast.success('Reply sent');
       setReplyText('');
       onClose();

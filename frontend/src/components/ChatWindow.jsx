@@ -239,12 +239,35 @@ function ChatWindow({ selectedUser, onBack }) {
                         return (
                             <div key={msg._id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
 
+
                                 <div
                                     className={`max-w-[75%] rounded-2xl text-sm overflow-hidden ${isMe
                                         ? 'bg-primary text-white rounded-br-sm'
                                         : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-bl-sm shadow-sm'
                                         }`}
                                 >
+                                    {msg.statusReply && (
+                                        <div className={`mx-2 mt-2 p-2 rounded-lg border-l-4 flex items-center gap-2 ${isMe ? 'bg-white/15 border-white/50' : 'bg-gray-100 dark:bg-gray-700 border-primary'
+                                            }`}>
+                                            {msg.statusReply.type === 'text' ? (
+                                                <div
+                                                    className="w-9 h-9 rounded flex-shrink-0 flex items-center justify-center"
+                                                    style={{ backgroundColor: msg.statusReply.backgroundColor }}
+                                                >
+                                                    <span className="text-white text-[8px] px-0.5 text-center leading-tight line-clamp-3">
+                                                        {msg.statusReply.content}
+                                                    </span>
+                                                </div>
+                                            ) : msg.statusReply.type === 'image' ? (
+                                                <img src={msg.statusReply.content} alt="status" className="w-9 h-9 rounded object-cover flex-shrink-0" />
+                                            ) : (
+                                                <video src={msg.statusReply.content} className="w-9 h-9 rounded object-cover flex-shrink-0" muted />
+                                            )}
+                                            <p className={`text-xs ${isMe ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'}`}>
+                                                Replied to status
+                                            </p>
+                                        </div>
+                                    )}
                                     {msg.image && (
                                         <img
                                             src={msg.image}
