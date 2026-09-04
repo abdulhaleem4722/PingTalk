@@ -35,7 +35,6 @@ exports.getStatuses = async (req, res) => {
   try {
     const userId = req.userId;
 
-    // Find all users this person has ever messaged with
     const messages = await Message.find({
       $or: [{ senderId: userId }, { receiverId: userId }],
     }).select('senderId receiverId');
@@ -46,7 +45,6 @@ exports.getStatuses = async (req, res) => {
       contactIds.add(other.toString());
     });
 
-    // Include own statuses too
     contactIds.add(userId.toString());
 
     const statuses = await Status.find({
@@ -55,7 +53,6 @@ exports.getStatuses = async (req, res) => {
       .populate('userId', 'name profilePic')
       .sort({ createdAt: 1 });
 
-    // Group by user
     const grouped = {};
     statuses.forEach((s) => {
       const uid = s.userId._id.toString();
@@ -81,11 +78,24 @@ exports.viewStatus = async (req, res) => {
     const userId = req.userId;
     const { statusId } = req.params;
 
-    await Status.findByIdAndUpdate(statusId, {
-      $addToSet: { viewedBy: userId },
-    });
+    const status = await Status.findById(statusId);
+    if (!status) return res.status(404).json({ message: 'Status not found' });
 
-    res.status(200).json({ message: 'Marked as viewed' });
+    // apna khud ka status ho to view mat count karo
+    if (status.userId.toString() === userId.toString()) {
+      return res.status(200).json({ success: true });
+    }
+
+    const alreadyViewed = status.viewedBy.some(
+      (v) => v.userId.toString() === userId.toString()
+    );
+
+    if (!alreadyViewed) {
+      status.viewedBy.push({ userId, viewedAt: new Date() });
+      await status.save();
+    }
+
+    res.status(200).json({ success: true });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -114,59 +124,33 @@ exports.deleteStatus = async (req, res) => {
   }
 };
 
-
-
-
-// UPDATE this existing function
-exports.viewStatus = async (req, res) => {
-  try {
-    const { statusId } = req.params;
-    const status = await Status.findById(statusId);
-    if (!status) return res.status(404).json({ message: 'Status not found' });
-
-    // apna khud ka status ho to view mat count karo
-    if (status.userId.toString() === req.user._id.toString()) {
-      return res.status(200).json({ success: true });
-    }
-
-    const alreadyViewed = status.viewedBy.some(
-      (v) => v.userId.toString() === req.user._id.toString()
-    );
-
-    if (!alreadyViewed) {
-      status.viewedBy.push({ userId: req.user._id, viewedAt: new Date() });
-      await status.save();
-    }
-
-    res.status(200).json({ success: true });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// NEW - viewers list (sirf status owner dekh sakay)
+// @desc Get viewers list (sirf status owner dekh sakay)
 exports.getViewers = async (req, res) => {
   try {
+    const userId = req.userId;
     const { statusId } = req.params;
+
     const status = await Status.findById(statusId).populate(
       'viewedBy.userId',
       'name profilePic'
     );
     if (!status) return res.status(404).json({ message: 'Status not found' });
 
-    if (status.userId.toString() !== req.user._id.toString()) {
+    if (status.userId.toString() !== userId.toString()) {
       return res.status(403).json({ message: 'Not allowed' });
     }
 
     res.status(200).json(status.viewedBy);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error(error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
-// NEW - reply on a status
+// @desc Reply on a status
 exports.replyToStatus = async (req, res) => {
   try {
+    const userId = req.userId;
     const { statusId } = req.params;
     const { text } = req.body;
 
@@ -180,27 +164,31 @@ exports.replyToStatus = async (req, res) => {
     const reply = await StatusReply.create({
       statusId: status._id,
       statusOwnerId: status.userId,
-      senderId: req.user._id,
+      senderId: userId,
       text: text.trim(),
     });
 
     const populated = await reply.populate('senderId', 'name profilePic');
     res.status(201).json(populated);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error(error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
-// NEW - jisay status lagaya usay apni replies dikhana (alag section)
+// @desc Jisay status lagaya usay apni replies dikhana (alag section)
 exports.getMyStatusReplies = async (req, res) => {
   try {
-    const replies = await StatusReply.find({ statusOwnerId: req.user._id })
+    const userId = req.userId;
+
+    const replies = await StatusReply.find({ statusOwnerId: userId })
       .populate('senderId', 'name profilePic')
       .populate('statusId', 'type content backgroundColor')
       .sort({ createdAt: -1 });
 
     res.status(200).json(replies);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error(error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
