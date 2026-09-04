@@ -7,9 +7,11 @@ function StatusViewer({ group, isOwn, onClose }) {
   const [index, setIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const intervalRef = useRef(null);
-  const DURATION = 5000; // 5 seconds per status
+  const videoRef = useRef(null);
+  const DURATION = 5000; // for image/text only
 
   const current = group.statuses[index];
+  const isVideo = current.type === 'video';
 
   useEffect(() => {
     // Mark as viewed
@@ -18,15 +20,20 @@ function StatusViewer({ group, isOwn, onClose }) {
     }
 
     setProgress(0);
-    const startTime = Date.now();
-    intervalRef.current = setInterval(() => {
-      const elapsed = Date.now() - startTime;
-      const pct = Math.min((elapsed / DURATION) * 100, 100);
-      setProgress(pct);
-      if (pct >= 100) {
-        goNext();
-      }
-    }, 50);
+    if (intervalRef.current) clearInterval(intervalRef.current);
+
+    // Only auto-advance by timer for text/image; video advances via onEnded
+    if (!isVideo) {
+      const startTime = Date.now();
+      intervalRef.current = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const pct = Math.min((elapsed / DURATION) * 100, 100);
+        setProgress(pct);
+        if (pct >= 100) {
+          goNext();
+        }
+      }, 50);
+    }
 
     return () => clearInterval(intervalRef.current);
   }, [index]);
@@ -43,6 +50,12 @@ function StatusViewer({ group, isOwn, onClose }) {
     if (index > 0) {
       setIndex((i) => i - 1);
     }
+  };
+
+  const handleVideoTimeUpdate = () => {
+    const video = videoRef.current;
+    if (!video || !video.duration) return;
+    setProgress((video.currentTime / video.duration) * 100);
   };
 
   const handleDelete = async () => {
@@ -70,7 +83,7 @@ function StatusViewer({ group, isOwn, onClose }) {
               className="h-full bg-white rounded-full"
               style={{
                 width: i < index ? '100%' : i === index ? `${progress}%` : '0%',
-                transition: i === index ? 'none' : 'width 0.2s',
+                transition: i === index && !isVideo ? 'none' : 'width 0.15s linear',
               }}
             />
           </div>
@@ -123,11 +136,13 @@ function StatusViewer({ group, isOwn, onClose }) {
           <img src={current.content} alt="status" className="max-w-full max-h-full object-contain" />
         ) : (
           <video
+            key={current._id}
+            ref={videoRef}
             src={current.content}
             autoPlay
             playsInline
-            muted
             className="max-w-full max-h-full object-contain"
+            onTimeUpdate={handleVideoTimeUpdate}
             onEnded={goNext}
           />
         )}
