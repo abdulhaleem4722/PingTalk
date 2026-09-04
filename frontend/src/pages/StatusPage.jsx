@@ -38,10 +38,9 @@ function StatusPage() {
   const myGroup = statusGroups.find((g) => g.user._id === myId);
   const otherGroups = statusGroups.filter((g) => g.user._id !== myId);
 
-  const hasUnviewed = (group) => {
-    return group.statuses.some((s) => !s.viewedBy.includes(myId));
-  };
-
+ const hasUnviewed = (group) => {
+    return group.statuses.some((s) => !s.viewers?.some((v) => v.userId === myId || v.userId?._id === myId));
+};
   const handleFileSelect = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
