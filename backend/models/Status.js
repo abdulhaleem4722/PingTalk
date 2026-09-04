@@ -13,7 +13,7 @@ const statusSchema = new mongoose.Schema(
       required: true,
     },
     content: {
-      type: String, // text content, or media URL
+      type: String,
       required: true,
     },
     backgroundColor: {
@@ -22,8 +22,8 @@ const statusSchema = new mongoose.Schema(
     },
     viewedBy: [
       {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+        userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        viewedAt: { type: Date, default: Date.now },
       },
     ],
     expiresAt: {
@@ -34,7 +34,6 @@ const statusSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Auto-delete expired statuses
 statusSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 module.exports = mongoose.model('Status', statusSchema);
