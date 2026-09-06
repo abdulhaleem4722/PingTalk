@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Send, MessageCircle, Check, CheckCheck, ArrowLeft, Image, X, Phone } from 'lucide-react';
+import { Send, MessageCircle, Check, CheckCheck, ArrowLeft, Image, X, Phone, PhoneMissed, PhoneOff } from 'lucide-react';
 import { saveMessagesToCache, loadMessagesFromCache } from '../utils/offlineCache';
 import { uploadImageToCloudinary } from '../api/cloudinary';
 import { useAuth } from '../context/AuthContext';
@@ -20,6 +20,7 @@ function ChatWindow({ selectedUser, onBack }) {
     const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef(null);
     const { startCall } = useCall();
+    const [calls, setCalls] = useState([]);
 
     useEffect(() => {
         if (!socket) return;
@@ -77,7 +78,21 @@ function ChatWindow({ selectedUser, onBack }) {
             }
         };
         fetchMessages();
+
+        const fetchCalls = async () => {
+            try {
+                const res = await api.get(`/calls/${selectedUser._id}`);
+                setCalls(res.data.calls);
+            } catch (error) {
+                console.error(error);
+            }
+        };
+        fetchCalls();
+
     }, [selectedUser]);
+
+
+
     useEffect(() => {
         if (!socket) return;
 
@@ -106,13 +121,26 @@ function ChatWindow({ selectedUser, onBack }) {
             }
         };
 
+        const handleCallLogged = (call) => {
+            const callerId = call.callerId?.toString();
+            const receiverId = call.receiverId?.toString();
+            if (callerId === selectedUser?._id || receiverId === selectedUser?._id) {
+                setCalls((prev) => [...prev, call]);
+            }
+        };
+
+        socket.on('callLogged', handleCallLogged);
+
         socket.on('newMessage', handleNewMessage);
         socket.on('messagesRead', handleMessagesRead);
         return () => {
             socket.off('newMessage', handleNewMessage);
             socket.off('messagesRead', handleMessagesRead);
+            socket.off('callLogged', handleCallLogged);
         };
     }, [socket, selectedUser]);
+
+
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
@@ -202,35 +230,35 @@ function ChatWindow({ selectedUser, onBack }) {
         <div className="flex-1 flex flex-col h-full bg-bg-light dark:bg-bg-dark">
             {/* Header */}
             <div className="p-4 flex items-center gap-3 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
-    <button onClick={onBack} className="sm:hidden w-9 h-9 rounded-full flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700 transition-colors">
-        <ArrowLeft size={20} />
-    </button>
-    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold overflow-hidden">
-        {selectedUser.profilePic ? (
-            <img src={selectedUser.profilePic} alt={selectedUser.name} className="w-full h-full object-cover" />
-        ) : (
-            selectedUser.name.charAt(0).toUpperCase()
-        )}
-    </div>
-    <div className="flex-1 min-w-0">
-        <p className="font-medium text-gray-900 dark:text-white truncate">{selectedUser.name}</p>
-        <p className="text-xs text-gray-400">
-            {isTyping ? (
-                <span className="text-primary">typing...</span>
-            ) : isOnline ? (
-                'Online'
-            ) : (
-                'Offline'
-            )}
-        </p>
-    </div>
-    <button
-        onClick={() => startCall(selectedUser)}
-        className="w-10 h-10 rounded-full flex items-center justify-center text-primary hover:bg-primary/10 active:scale-90 transition-all"
-    >
-        <Phone size={20} />
-    </button>
-</div>
+                <button onClick={onBack} className="sm:hidden w-9 h-9 rounded-full flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700 transition-colors">
+                    <ArrowLeft size={20} />
+                </button>
+                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold overflow-hidden">
+                    {selectedUser.profilePic ? (
+                        <img src={selectedUser.profilePic} alt={selectedUser.name} className="w-full h-full object-cover" />
+                    ) : (
+                        selectedUser.name.charAt(0).toUpperCase()
+                    )}
+                </div>
+                <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900 dark:text-white truncate">{selectedUser.name}</p>
+                    <p className="text-xs text-gray-400">
+                        {isTyping ? (
+                            <span className="text-primary">typing...</span>
+                        ) : isOnline ? (
+                            'Online'
+                        ) : (
+                            'Offline'
+                        )}
+                    </p>
+                </div>
+                <button
+                    onClick={() => startCall(selectedUser)}
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-primary hover:bg-primary/10 active:scale-90 transition-all"
+                >
+                    <Phone size={20} />
+                </button>
+            </div>
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -239,67 +267,91 @@ function ChatWindow({ selectedUser, onBack }) {
                         <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
                     </div>
                 ) : (
-                    messages.map((msg) => {
-                        const isMe = msg.senderId?.toString() === myId?.toString();
-                        return (
-                            <div key={msg._id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-
-
-                                <div
-                                    className={`max-w-[75%] rounded-2xl text-sm overflow-hidden ${isMe
-                                        ? 'bg-primary text-white rounded-br-sm'
-                                        : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-bl-sm shadow-sm'
-                                        }`}
-                                >
-                                    {msg.statusReply && (
-                                        <div className={`mx-2 mt-2 p-2 rounded-lg border-l-4 flex items-center gap-2 ${isMe ? 'bg-white/15 border-white/50' : 'bg-gray-100 dark:bg-gray-700 border-primary'
-                                            }`}>
-                                            {msg.statusReply.type === 'text' ? (
-                                                <div
-                                                    className="w-9 h-9 rounded flex-shrink-0 flex items-center justify-center"
-                                                    style={{ backgroundColor: msg.statusReply.backgroundColor }}
-                                                >
-                                                    <span className="text-white text-[8px] px-0.5 text-center leading-tight line-clamp-3">
-                                                        {msg.statusReply.content}
-                                                    </span>
-                                                </div>
-                                            ) : msg.statusReply.type === 'image' ? (
-                                                <img src={msg.statusReply.content} alt="status" className="w-9 h-9 rounded object-cover flex-shrink-0" />
-                                            ) : (
-                                                <video src={msg.statusReply.content} className="w-9 h-9 rounded object-cover flex-shrink-0" muted />
-                                            )}
-                                            <p className={`text-xs ${isMe ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'}`}>
-                                                Replied to status
-                                            </p>
+                    [...messages, ...calls.map((c) => ({ ...c, __isCall: true }))]
+                        .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+                        .map((item) => {
+                            if (item.__isCall) {
+                                const isMe = item.callerId?.toString() === myId?.toString();
+                                const label =
+                                    item.status === 'answered'
+                                        ? `Voice call · ${Math.floor(item.duration / 60)}:${(item.duration % 60).toString().padStart(2, '0')}`
+                                        : item.status === 'missed'
+                                            ? isMe ? 'Call not answered' : 'Missed voice call'
+                                            : 'Call declined';
+                                const Icon = item.status === 'answered' ? Phone : item.status === 'missed' ? PhoneMissed : PhoneOff;
+                                return (
+                                    <div key={item._id} className="flex justify-center">
+                                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800 text-xs text-gray-500 dark:text-gray-400">
+                                            <Icon size={13} className={item.status !== 'answered' ? 'text-red-400' : ''} />
+                                            <span>{label}</span>
+                                            <span className="text-gray-400">
+                                                {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
                                         </div>
-                                    )}
-                                    {msg.image && (
-                                        <img
-                                            src={msg.image}
-                                            alt="shared"
-                                            className="w-full max-w-[280px] max-h-[280px] object-cover cursor-pointer"
-                                            onClick={() => window.open(msg.image, '_blank')}
-                                            onLoad={() => messagesEndRef.current?.scrollIntoView({ behavior: 'auto' })}
-                                        />
-                                    )}
-                                    {(msg.text || isMe) && (
-                                        <div className="px-4 py-2 flex items-end gap-1.5">
-                                            {msg.text && <span>{msg.text}</span>}
-                                            {isMe && (
-                                                <span className="flex-shrink-0 mb-0.5 ml-auto">
-                                                    {msg.status === 'read' ? (
-                                                        <CheckCheck size={15} className="text-sky-300" />
-                                                    ) : (
-                                                        <Check size={15} className="text-white/70" />
+                                    </div>
+                                );
+                            }
+
+                            const msg = item;
+                            const isMe = msg.senderId?.toString() === myId?.toString();
+                            return (
+                                <div key={msg._id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                                    <div
+                                        className={`max-w-[75%] rounded-2xl text-sm overflow-hidden ${isMe
+                                            ? 'bg-primary text-white rounded-br-sm'
+                                            : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-bl-sm shadow-sm'
+                                            }`}
+                                    >
+                                        {msg.statusReply && (
+                                            <div className={`mx-2 mt-2 p-2 rounded-lg border-l-4 flex items-center gap-2 ${isMe ? 'bg-white/15 border-white/50' : 'bg-gray-100 dark:bg-gray-700 border-primary'
+                                                }`}>
+                                                {msg.statusReply.type === 'text' ? (
+                                                    <div
+                                                        className="w-9 h-9 rounded flex-shrink-0 flex items-center justify-center"
+                                                        style={{ backgroundColor: msg.statusReply.backgroundColor }}
+                                                    >
+                                                        <span className="text-white text-[8px] px-0.5 text-center leading-tight line-clamp-3">
+                                                            {msg.statusReply.content}
+                                                        </span>
+                                                    </div>
+                                                ) : msg.statusReply.type === 'image' ? (
+                                                    <img src={msg.statusReply.content} alt="status" className="w-9 h-9 rounded object-cover flex-shrink-0" />
+                                                ) : (
+                                                    <video src={msg.statusReply.content} className="w-9 h-9 rounded object-cover flex-shrink-0" muted />
+                                                )}
+                                                <p className={`text-xs ${isMe ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'}`}>
+                                                    Replied to status
+                                                </p>
+                                            </div>
+                                        )}
+                                        {msg.image && (
+                                            <img
+                                                src={msg.image}
+                                                alt="shared"
+                                                className="w-full max-w-[280px] max-h-[280px] object-cover cursor-pointer"
+                                                onClick={() => window.open(msg.image, '_blank')}
+                                                onLoad={() => messagesEndRef.current?.scrollIntoView({ behavior: 'auto' })}
+                                            />
+                                        )}
+                                        {(msg.text || isMe) && (
+                                            <div className="px-4 py-2 flex items-end gap-1.5 flex-wrap">
+                                                {msg.text && <span>{msg.text}</span>}
+                                                <span className={`text-[10px] ml-auto flex-shrink-0 flex items-center gap-1 ${isMe ? 'text-white/70' : 'text-gray-400'}`}>
+                                                    {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    {isMe && (
+                                                        msg.status === 'read' ? (
+                                                            <CheckCheck size={14} className="text-sky-300" />
+                                                        ) : (
+                                                            <Check size={14} className="text-white/70" />
+                                                        )
                                                     )}
                                                 </span>
-                                            )}
-                                        </div>
-                                    )}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        );
-                    })
+                            );
+                        })
                 )}
                 <div ref={messagesEndRef} />
             </div>

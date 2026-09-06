@@ -10,6 +10,7 @@ const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const messageRoutes = require('./routes/messageRoutes');
+const callRoutes = require('./routes/callRoutes');
 
 
 connectDB();
@@ -122,6 +123,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/status', statusRoutes);
+app.use('/api/calls', callRoutes);
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
