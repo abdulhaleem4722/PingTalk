@@ -217,11 +217,10 @@ export function CallProvider({ children }) {
       cleanup('rejected');
     };
 
-    const handleCallEnded = () => {
-      const status = wasConnectedRef.current ? null : 'missed';
-      // Receiver side generally doesn't log (only caller logs), just cleanup
-      cleanup(status && !isCallerRef.current ? null : status);
-    };
+   const handleCallEnded = () => {
+    const status = wasConnectedRef.current ? 'answered' : 'missed';
+    cleanup(status);
+};
 
     const handleCallFailed = () => {
       cleanup(isCallerRef.current ? 'missed' : null);
