@@ -53,8 +53,15 @@ export function AuthProvider({ children }) {
     connectSocket(userData.id);
   };
 
+    const handleLogout = () => {
+    localStorage.removeItem('token');
+    setUser(null);
+    disconnectSocket();
+  }
+
   const logout = async () => {
     try {
+      handleLogout();
       await api.post('/auth/logout');
     } catch (error) {
       console.error(error);
