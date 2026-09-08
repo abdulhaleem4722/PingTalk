@@ -125,7 +125,7 @@ function Signup() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-primary hover:bg-primary-dark text-white font-semibold py-3 rounded-xl transition-all shadow-lg shadow-primary/30 hover:shadow-primary/40 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full bg-primary hover:bg-primary-dark active:bg-primary-dark text-white font-semibold py-3 rounded-xl transition-all duration-200 shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
             >
               {loading ? 'Creating account...' : 'Sign Up'}
             </button>

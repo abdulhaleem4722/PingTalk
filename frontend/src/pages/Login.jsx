@@ -31,8 +31,8 @@ function Login() {
     try {
       const res = await api.post('/auth/login', formData);
       toast.success(res.data.message);
-      login(res.data.user);
-      navigate('/chat'); // baad mein ye page banayenge
+      login(res.data.user, res.data.token);
+      navigate('/chat');// baad mein ye page banayenge
     } catch (error) {
       const message = error.response?.data?.message || 'Something went wrong';
       if (message === 'Please verify your email first') {
@@ -110,7 +110,7 @@ function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-primary hover:bg-primary-dark text-white font-semibold py-3 rounded-xl transition-all shadow-lg shadow-primary/30 hover:shadow-primary/40 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full bg-primary hover:bg-primary-dark active:bg-primary-dark text-white font-semibold py-3 rounded-xl transition-all duration-200 shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
             >
               {loading ? 'Logging in...' : 'Log In'}
             </button>

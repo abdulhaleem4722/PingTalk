@@ -25,17 +25,19 @@ exports.sendMessage = async (req, res) => {
     try {
         const senderId = req.userId;
         const { receiverId } = req.params;
-        const { text, image } = req.body;
+       const { text, image, audio, statusReply } = req.body;
 
-        if (!text && !image) {
-            return res.status(400).json({ message: 'Message cannot be empty' });
-        }
+      if (!text && !image && !audio) {
+  return res.status(400).json({ message: 'Message cannot be empty' });
+}
 
         const newMessage = new Message({
             senderId,
             receiverId,
             text: text || '',
             image: image || '',
+            audio: audio || '',
+            statusReply: statusReply || undefined,
         });
 
         await newMessage.save();

@@ -4,6 +4,8 @@ import Signup from './pages/Signup';
 import VerifyOTP from './pages/VerifyOTP';
 import Login from './pages/Login';
 import ChatHome from './pages/ChatHome';
+import Profile from './pages/Profile';
+import StatusPage from './pages/StatusPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -28,6 +30,22 @@ function App() {
         element={
           <ProtectedRoute>
             <ChatHome />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/status"
+        element={
+          <ProtectedRoute>
+            <StatusPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <Profile />
           </ProtectedRoute>
         }
       />

@@ -1,8 +1,15 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://pingtalk-production.up.railway.app/api',
-  withCredentials: true,
+  baseURL: '/api',
+});
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('pingtalk_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 export default api;
