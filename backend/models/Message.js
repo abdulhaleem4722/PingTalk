@@ -6,6 +6,10 @@ const messageSchema = new mongoose.Schema(
     receiverId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     text: { type: String, default: '' },
     image: { type: String, default: '' },
+    audio: {
+      type: String,
+      default: '',
+    },
     statusReply: {
       type: {
         type: String,

@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { Send, MessageCircle, Check, CheckCheck, ArrowLeft, Image, X, Phone, PhoneMissed, PhoneOff } from 'lucide-react';
+import { Send, MessageCircle, Check, CheckCheck, ArrowLeft, Image, X, Phone, PhoneMissed, PhoneOff, Mic, Trash2, Play, Pause } from 'lucide-react';
 import { saveMessagesToCache, loadMessagesFromCache } from '../utils/offlineCache';
 import { uploadImageToCloudinary } from '../api/cloudinary';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import { useCall } from '../context/CallContext';
+import AudioMessage from './AudioMessage';
 
 function ChatWindow({ selectedUser, onBack }) {
     const { user, socket, onlineUsers } = useAuth();
@@ -21,6 +22,11 @@ function ChatWindow({ selectedUser, onBack }) {
     const fileInputRef = useRef(null);
     const { startCall } = useCall();
     const [calls, setCalls] = useState([]);
+    const [isRecording, setIsRecording] = useState(false);
+    const [recordingTime, setRecordingTime] = useState(0);
+    const mediaRecorderRef = useRef(null);
+    const audioChunksRef = useRef([]);
+    const recordingIntervalRef = useRef(null);
 
     useEffect(() => {
         if (!socket) return;
@@ -175,6 +181,64 @@ function ChatWindow({ selectedUser, onBack }) {
 
         setSelectedImage(file);
         setImagePreview(URL.createObjectURL(file));
+    };
+
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mediaRecorder = new MediaRecorder(stream);
+            mediaRecorderRef.current = mediaRecorder;
+            audioChunksRef.current = [];
+
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) audioChunksRef.current.push(e.data);
+            };
+
+            mediaRecorder.start();
+            setIsRecording(true);
+            setRecordingTime(0);
+            recordingIntervalRef.current = setInterval(() => {
+                setRecordingTime((t) => t + 1);
+            }, 1000);
+        } catch (error) {
+            console.error('Mic permission denied', error);
+            alert('Microphone access is needed to record voice messages');
+        }
+    };
+
+    const stopRecording = (send) => {
+        const mediaRecorder = mediaRecorderRef.current;
+        if (!mediaRecorder) return;
+
+        clearInterval(recordingIntervalRef.current);
+        setIsRecording(false);
+
+        mediaRecorder.onstop = async () => {
+            mediaRecorder.stream.getTracks().forEach((t) => t.stop());
+
+            if (!send) {
+                setRecordingTime(0);
+                return;
+            }
+
+            const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+            const audioFile = new File([audioBlob], 'voice-message.webm', { type: 'audio/webm' });
+
+            try {
+                setUploading(true);
+                const audioUrl = await uploadImageToCloudinary(audioFile);
+                const res = await api.post(`/messages/${selectedUser._id}`, { audio: audioUrl });
+                setMessages((prev) => [...prev, res.data.message]);
+                saveMessagesToCache(selectedUser._id, [...messages, res.data.message]);
+            } catch (error) {
+                console.error('Failed to send voice message', error);
+            } finally {
+                setUploading(false);
+                setRecordingTime(0);
+            }
+        };
+
+        mediaRecorder.stop();
     };
 
     const removeSelectedImage = () => {
@@ -333,7 +397,9 @@ function ChatWindow({ selectedUser, onBack }) {
                                                 onLoad={() => messagesEndRef.current?.scrollIntoView({ behavior: 'auto' })}
                                             />
                                         )}
-                                        {(msg.text || isMe) && (
+
+                                        {msg.audio && <AudioMessage src={msg.audio} isMe={isMe} />}
+                                       {(msg.text || (isMe && !msg.audio)) && (
                                             <div className="px-4 py-2 flex items-end gap-1.5 flex-wrap">
                                                 {msg.text && <span>{msg.text}</span>}
                                                 <span className={`text-[10px] ml-auto flex-shrink-0 flex items-center gap-1 ${isMe ? 'text-white/70' : 'text-gray-400'}`}>
@@ -371,6 +437,7 @@ function ChatWindow({ selectedUser, onBack }) {
                         </div>
                     </div>
                 )}
+
                 <form onSubmit={handleSend} className="p-3 flex items-center gap-2">
                     <input
                         type="file"
@@ -379,31 +446,74 @@ function ChatWindow({ selectedUser, onBack }) {
                         onChange={handleImageSelect}
                         className="hidden"
                     />
-                    <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="w-10 h-10 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-90 flex items-center justify-center flex-shrink-0 transition-all duration-200"
-                    >
-                        <Image size={20} />
-                    </button>
-                    <input
-                        type="text"
-                        value={text}
-                        onChange={handleTyping}
-                        placeholder="Type a message..."
-                        className="flex-1 px-4 py-2.5 rounded-full bg-gray-100 dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                    <button
-                        type="submit"
-                        disabled={uploading}
-                        className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary-dark active:scale-90 shadow-md hover:shadow-lg transition-all duration-200 flex-shrink-0 disabled:opacity-60 disabled:active:scale-100"
-                    >
-                        {uploading ? (
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        ) : (
+
+                    {isRecording ? (
+                        <div className="flex-1 flex items-center gap-3 px-4 py-2.5 rounded-full bg-red-50 dark:bg-red-500/10">
+                            <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse flex-shrink-0"></div>
+                            <span className="text-red-500 text-sm font-medium flex-1">
+                                Recording... {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() => stopRecording(false)}
+                                className="text-gray-500 dark:text-gray-400 hover:text-red-500 transition-colors"
+                            >
+                                <Trash2 size={18} />
+                            </button>
+                        </div>
+                    ) : (
+                        <>
+                            <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="w-10 h-10 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-90 flex items-center justify-center flex-shrink-0 transition-all duration-200"
+                            >
+                                <Image size={20} />
+                            </button>
+                            <input
+                                type="text"
+                                value={text}
+                                onChange={handleTyping}
+                                placeholder="Type a message..."
+                                className="flex-1 px-4 py-2.5 rounded-full bg-gray-100 dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                            />
+                        </>
+                    )}
+
+                    {isRecording ? (
+                        <button
+                            type="button"
+                            onClick={() => stopRecording(true)}
+                            className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center active:scale-90 shadow-md transition-all duration-200 flex-shrink-0"
+                        >
                             <Send size={18} />
-                        )}
-                    </button>
+                        </button>
+                    ) : text.trim() ? (
+                        <button
+                            type="submit"
+                            disabled={uploading}
+                            className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary-dark active:scale-90 shadow-md hover:shadow-lg transition-all duration-200 flex-shrink-0 disabled:opacity-60"
+                        >
+                            {uploading ? (
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            ) : (
+                                <Send size={18} />
+                            )}
+                        </button>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={startRecording}
+                            disabled={uploading}
+                            className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary-dark active:scale-90 shadow-md transition-all duration-200 flex-shrink-0 disabled:opacity-60"
+                        >
+                            {uploading ? (
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            ) : (
+                                <Mic size={18} />
+                            )}
+                        </button>
+                    )}
                 </form>
             </div>
         </div>
