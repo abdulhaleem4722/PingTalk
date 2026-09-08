@@ -15,23 +15,23 @@ function Sidebar({ selectedUser, setSelectedUser }) {
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState('');
 
-const fetchUsers = async () => {
+  const fetchUsers = async () => {
     const cached = loadUsersFromCache();
     if (cached) {
-        setUsers(cached);
-        setLoading(false);
+      setUsers(cached);
+      setLoading(false);
     }
 
     try {
-        const res = await api.get('/users');
-        setUsers(res.data.users);
-        saveUsersToCache(res.data.users);
+      const res = await api.get('/users');
+      setUsers(res.data.users);
+      saveUsersToCache(res.data.users);
     } catch (error) {
-        console.error('Could not fetch fresh users (may be offline)', error);
+      console.error('Could not fetch fresh users (may be offline)', error);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
-};
+  };
 
   useEffect(() => {
     fetchUsers();
@@ -55,11 +55,16 @@ const fetchUsers = async () => {
           fetchUsers();
           return prevUsers;
         } else {
-          updated = prevUsers.map((u) => {
+          const updated = prevUsers.map((u) => {
             if (u._id.toString() === otherUserId) {
               return {
                 ...u,
-                lastMessage: { text: newMessage.text, createdAt: newMessage.createdAt },
+                lastMessage: {
+                  text: newMessage.text,
+                  image: newMessage.image,
+                  audio: newMessage.audio,
+                  createdAt: newMessage.createdAt,
+                },
                 unreadCount: isCurrentlyOpen ? 0 : (u.unreadCount || 0) + (senderId === otherUserId ? 1 : 0),
               };
             }
@@ -258,7 +263,15 @@ const fetchUsers = async () => {
                   <div className="flex-1 text-left min-w-0">
                     <p className="font-medium text-gray-900 dark:text-white truncate">{u.name}</p>
                     <p className={`text-xs truncate ${hasUnread ? 'text-gray-700 dark:text-gray-300 font-medium' : 'text-gray-400'}`}>
-                      {u.lastMessage ? u.lastMessage.text : isOnline ? 'Online' : 'Offline'}
+                      {u.lastMessage
+                        ? u.lastMessage.audio
+                          ? '🎤 Voice message'
+                          : u.lastMessage.image
+                            ? '📷 Photo'
+                            : u.lastMessage.text
+                        : isOnline
+                          ? 'Online'
+                          : 'Offline'}
                     </p>
                   </div>
                   {hasUnread && (

@@ -29,7 +29,12 @@ exports.getUsersForSidebar = async (req, res) => {
         return {
           ...u.toObject(),
           lastMessage: lastMessage
-            ? { text: lastMessage.text, createdAt: lastMessage.createdAt }
+            ? {
+              text: lastMessage.text,
+              image: lastMessage.image,
+              audio: lastMessage.audio,
+              createdAt: lastMessage.createdAt,
+            }
             : null,
           unreadCount,
         };
