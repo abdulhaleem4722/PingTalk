@@ -3,8 +3,8 @@ export const uploadImageToCloudinary = async (file) => {
   formData.append('file', file);
   formData.append('upload_preset', 'pingtalk_chat');
 
-  const isVideo = file.type.startsWith('video/');
-  const resourceType = isVideo ? 'video' : 'image';
+  const isVideoOrAudio = file.type.startsWith('video/') || file.type.startsWith('audio/');
+  const resourceType = isVideoOrAudio ? 'video' : 'image';
 
   const res = await fetch(
     `https://api.cloudinary.com/v1_1/tcb5qucv/${resourceType}/upload`,
